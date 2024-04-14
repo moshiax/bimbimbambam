@@ -28,31 +28,66 @@
     </ul>
 
     <script>
-        var originalIPs = new Set(); // Массив для хранения исходных данных
+        var originalIPs = new Set(); // Множество для хранения исходных данных
         var totalIPs = []; // Массив для хранения обработанных данных
         var loadedIPs = 0;
         var loading = false;
 
         function loadIPs() {
+            var repoUrl = 'https://api.github.com/repos/moshiax/minotaurindex/contents/';
+            var fileExt = '.txt';
+
+            // Функция для загрузки содержимого файла
+            function loadFileContent(file) {
+                var xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        var lines = xhr.responseText.split('\n');
+                        lines.forEach(function(line) {
+                            originalIPs.add(line);
+                        });
+                        if (file.name !== 'connected_ips.txt') {
+                            filterIPs(); // Фильтруем список после загрузки всех файлов, кроме connected_ips.txt
+                        }
+                    }
+                };
+                xhr.open('GET', file.download_url, true);
+                xhr.send();
+            }
+
+            // Запрос списка файлов в директории
             var xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4 && xhr.status === 200) {
-                    var lines = xhr.responseText.split('\n');
-                    lines.forEach(function(line) {
-                        originalIPs.add(line);
+                    var files = JSON.parse(xhr.responseText);
+                    var txtFiles = files.filter(function(file) {
+                        return file.name.endsWith(fileExt);
                     });
-                    totalIPs = Array.from(originalIPs).map(function (line) {
-                        return line.split(' - ');
-                    }).reverse(); // Обратный порядок элементов
-                    loadInitialIPs();
+                    var connectedIPsFile = files.find(function(file) {
+                        return file.name === 'connected_ips.txt';
+                    });
+                    loadFileContent(connectedIPsFile); // Загружаем файл connected_ips.txt первым
+                    txtFiles.forEach(function(file) {
+                        if (file.name !== 'connected_ips.txt') {
+                            loadFileContent(file);
+                        }
+                    });
                 }
             };
-            xhr.open('GET', 'https://raw.githubusercontent.com/moshiax/minotaurindex/main/connected_ips.txt', true);
+            xhr.open('GET', repoUrl, true);
             xhr.send();
+        }
+
+        function filterIPs() {
+            totalIPs = Array.from(originalIPs).map(function (line) {
+                return line.split(' - ');
+            }).reverse(); // Фильтруем исходный список
+            loadInitialIPs();
         }
 
         function loadInitialIPs() {
             var ipList = document.getElementById('ipList');
+            ipList.innerHTML = ''; // Очищаем текущий список IP-адресов
             totalIPs.slice(0, 500).forEach(function (ipData) {
                 if (ipData.length === 2) {
                     var li = document.createElement('li');
@@ -106,18 +141,18 @@
 
         function searchIPs() {
             var searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            totalIPs = Array.from(originalIPs).filter(function (ipData) {
-                return ipData.join(' - ').toLowerCase().includes(searchQuery);
+            totalIPs = Array.from(originalIPs).filter(function (line) {
+                return line.toLowerCase().includes(searchQuery);
             }).map(function (line) {
                 return line.split(' - ');
-            });
+            }).reverse(); // Фильтруем и обновляем список
             reloadIPs();
         }
 
         function reloadIPs() {
             var ipList = document.getElementById('ipList');
-            ipList.innerHTML = ''; // Очистить текущий список IP-адресов
-            loadInitialIPs(); // Загрузить IP-адреса с учетом измененного списка
+            ipList.innerHTML = ''; // Очищаем текущий список IP-адресов
+            loadInitialIPs(); // Загружаем IP-адреса с учетом измененного списка
         }
 
         loadIPs();
