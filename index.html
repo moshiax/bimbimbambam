@@ -28,7 +28,7 @@
     </ul>
 
     <script>
-        var originalIPs = []; // Массив для хранения исходных данных
+        var originalIPs = new Set(); // Массив для хранения исходных данных
         var totalIPs = []; // Массив для хранения обработанных данных
         var loadedIPs = 0;
         var loading = false;
@@ -37,10 +37,13 @@
             var xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4 && xhr.status === 200) {
-                    originalIPs = xhr.responseText.split('\n').map(function (line) {
+                    var lines = xhr.responseText.split('\n');
+                    lines.forEach(function(line) {
+                        originalIPs.add(line);
+                    });
+                    totalIPs = Array.from(originalIPs).map(function (line) {
                         return line.split(' - ');
                     }).reverse(); // Обратный порядок элементов
-                    totalIPs = [...originalIPs]; // Создаем копию для дальнейшего использования
                     loadInitialIPs();
                 }
             };
@@ -50,10 +53,8 @@
 
         function loadInitialIPs() {
             var ipList = document.getElementById('ipList');
-            var existing = {};
             totalIPs.slice(0, 500).forEach(function (ipData) {
-                if (ipData.length === 2 && !existing[ipData[0]]) {
-                    existing[ipData[0]] = true;
+                if (ipData.length === 2) {
                     var li = document.createElement('li');
                     var a = document.createElement('a');
                     a.textContent = ipData[0] + ' - ' + ipData[1];
@@ -72,11 +73,9 @@
                 loading = true;
                 setTimeout(function () {
                     var ipList = document.getElementById('ipList');
-                    var existing = {};
                     var remainingIPs = totalIPs.slice(loadedIPs, Math.min(loadedIPs + 100, totalIPs.length));
                     remainingIPs.forEach(function (ipData) {
-                        if (ipData.length === 2 && !existing[ipData[0]]) {
-                            existing[ipData[0]] = true;
+                        if (ipData.length === 2) {
                             var li = document.createElement('li');
                             var a = document.createElement('a');
                             a.textContent = ipData[0] + ' - ' + ipData[1];
@@ -107,8 +106,10 @@
 
         function searchIPs() {
             var searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            totalIPs = originalIPs.filter(function (ipData) {
+            totalIPs = Array.from(originalIPs).filter(function (ipData) {
                 return ipData.join(' - ').toLowerCase().includes(searchQuery);
+            }).map(function (line) {
+                return line.split(' - ');
             });
             reloadIPs();
         }
