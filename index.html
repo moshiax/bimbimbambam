@@ -50,8 +50,10 @@
 
         function loadInitialIPs() {
             var ipList = document.getElementById('ipList');
+            var existing = {};
             totalIPs.slice(0, 500).forEach(function (ipData) {
-                if (ipData.length === 2) {
+                if (ipData.length === 2 && !existing[ipData[0]]) {
+                    existing[ipData[0]] = true;
                     var li = document.createElement('li');
                     var a = document.createElement('a');
                     a.textContent = ipData[0] + ' - ' + ipData[1];
@@ -70,9 +72,11 @@
                 loading = true;
                 setTimeout(function () {
                     var ipList = document.getElementById('ipList');
+                    var existing = {};
                     var remainingIPs = totalIPs.slice(loadedIPs, Math.min(loadedIPs + 100, totalIPs.length));
                     remainingIPs.forEach(function (ipData) {
-                        if (ipData.length === 2) {
+                        if (ipData.length === 2 && !existing[ipData[0]]) {
+                            existing[ipData[0]] = true;
                             var li = document.createElement('li');
                             var a = document.createElement('a');
                             a.textContent = ipData[0] + ' - ' + ipData[1];
