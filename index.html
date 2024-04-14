@@ -2,35 +2,121 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fullscreen Video Background</title>
+    <title>МИНОТАВР SEARCH ENGINE</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden; 
+        body {
+            background-color: black;
+            color: white;
         }
-        
-        #video-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover; 
-            z-index: -1;
+        a {
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <video id="video-background" autoplay loop muted>
-        <source src="video.mp4" type="video/mp4">
+    <h1>МИНОТАВР SEARCH ENGINE</h1>
 
-        Your browser does not support the video tag.
-    </video>
+    <!-- Добавленное поле для ввода поискового запроса -->
+    <input type="text" id="searchInput" placeholder="Search..." oninput="searchIPs()">
+
+    <ul id="ipList">
+        <!-- Динамически загруженные IP-адреса будут здесь -->
+    </ul>
+
+    <script>
+        var originalIPs = []; // Массив для хранения исходных данных
+        var totalIPs = []; // Массив для хранения обработанных данных
+        var loadedIPs = 0;
+        var loading = false;
+
+        function loadIPs() {
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    originalIPs = xhr.responseText.split('\n').map(function (line) {
+                        return line.split(' - ');
+                    }).reverse(); // Обратный порядок элементов
+                    totalIPs = [...originalIPs]; // Создаем копию для дальнейшего использования
+                    loadInitialIPs();
+                }
+            };
+            xhr.open('GET', 'https://raw.githubusercontent.com/moshiax/minotaurindex/main/connected_ips.txt', true);
+            xhr.send();
+        }
+
+        function loadInitialIPs() {
+            var ipList = document.getElementById('ipList');
+            totalIPs.slice(0, 500).forEach(function (ipData) {
+                if (ipData.length === 2) {
+                    var li = document.createElement('li');
+                    var a = document.createElement('a');
+                    a.textContent = ipData[0] + ' - ' + ipData[1];
+                    a.onclick = function () {
+                        redirectToIP(ipData[0]);
+                    };
+                    li.appendChild(a);
+                    ipList.appendChild(li);
+                }
+            });
+            loadedIPs = 500;
+        }
+
+        function loadMoreIPsIfNeeded() {
+            if (!loading && loadedIPs < totalIPs.length && shouldLoadMore()) {
+                loading = true;
+                setTimeout(function () {
+                    var ipList = document.getElementById('ipList');
+                    var remainingIPs = totalIPs.slice(loadedIPs, Math.min(loadedIPs + 100, totalIPs.length));
+                    remainingIPs.forEach(function (ipData) {
+                        if (ipData.length === 2) {
+                            var li = document.createElement('li');
+                            var a = document.createElement('a');
+                            a.textContent = ipData[0] + ' - ' + ipData[1];
+                            a.onclick = function () {
+                                redirectToIP(ipData[0]);
+                            };
+                            li.appendChild(a);
+                            ipList.appendChild(li);
+                        }
+                    });
+                    loadedIPs += remainingIPs.length;
+                    loading = false;
+                }, 1000);
+            }
+        }
+
+        function shouldLoadMore() {
+            var scrollPosition = window.scrollY || window.pageYOffset;
+            var windowHeight = window.innerHeight;
+            var documentHeight = Math.max(document.body.scrollHeight, document.body.offsetHeight, document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);
+            var scrollPercentage = (scrollPosition / (documentHeight - windowHeight)) * 100;
+            return scrollPercentage >= 70;
+        }
+
+        function redirectToIP(ip) {
+            window.open('http://' + ip, '_blank');
+        }
+
+        function searchIPs() {
+            var searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            totalIPs = originalIPs.filter(function (ipData) {
+                return ipData.join(' - ').toLowerCase().includes(searchQuery);
+            });
+            reloadIPs();
+        }
+
+        function reloadIPs() {
+            var ipList = document.getElementById('ipList');
+            ipList.innerHTML = ''; // Очистить текущий список IP-адресов
+            loadInitialIPs(); // Загрузить IP-адреса с учетом измененного списка
+        }
+
+        loadIPs();
+        window.addEventListener('scroll', loadMoreIPsIfNeeded);
+    </script>
 </body>
 </html>
