@@ -56,6 +56,13 @@
             height: 100%;
             background-color: white; /* Белый цвет заполняющей линии */
         }
+		.header a {
+    color: white; /* Цвет текста */
+    text-decoration: none; /* Убираем подчеркивание */
+    cursor: pointer;
+    font-size: 30px; /* Размер шрифта */
+}
+
 h1 {
     position: absolute; /* Используем абсолютное позиционирование */
     top: 10px; /* Размещаем заголовок вверху страницы */
@@ -70,9 +77,12 @@ h1 {
 </head>
 <body>
     <div class="progress-container">
-        <div class="header">
-            <span id="analyticsText">Minotaur Analytics</span>
-        </div>
+<div class="header">
+    <a href="https://moshiax.github.io/minotauranalytics/" target="_blank">
+        <span id="analyticsText">Minotaur Analytics</span>
+    </a>
+</div>
+
         <div class="progress-bar-container">
             <div class="progress-bar">
                 <div class="progress-bar-fill"></div> <!-- Добавлено для заполнения прогресс-бара -->
